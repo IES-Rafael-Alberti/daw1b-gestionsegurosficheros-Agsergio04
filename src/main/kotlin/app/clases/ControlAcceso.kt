@@ -1,0 +1,115 @@
+package app.clases
+
+import model.enumerados.Perfil
+import model.usuarios.Usuario
+import service.interfaces.IServUsuarios
+import ui.intefaces.IEntradaSalida
+import utils.interfaces.IUtilFicheros
+
+/**
+ * Clase responsable del control de acceso de usuarios: alta inicial, inicio de sesión
+ * y recuperación del perfil. Su objetivo es asegurar que al menos exista un usuario
+ * en el sistema antes de acceder a la aplicación.
+ *
+ * Esta clase encapsula toda la lógica relacionada con la autenticación de usuarios,
+ * separando así la responsabilidad del acceso del resto de la lógica de negocio.
+ *
+ * Utiliza inyección de dependencias (DIP) para recibir los servicios necesarios:
+ * - La ruta del archivo de usuarios
+ * - El gestor de usuarios para registrar o validar credenciales
+ * - La interfaz de entrada/salida para interactuar con el usuario
+ * - La utilidad de ficheros para comprobar la existencia y contenido del fichero
+ *
+ * @property rutaArchivo Ruta del archivo donde se encuentran los usuarios registrados.
+ * @property gestorUsuarios Servicio encargado de la gestión de usuarios (login, alta...).
+ * @property ui Interfaz para mostrar mensajes y recoger entradas del usuario.
+ * @property ficheros Utilidad para operar con ficheros (leer, comprobar existencia...).
+ */
+class ControlAcceso(
+
+    private val rutaArchivo: String,
+    private val gestorUsuarios: IServUsuarios,
+    private val ui: IEntradaSalida,
+    private val ficheros: IUtilFicheros
+)
+{
+
+    /**
+     * Inicia el proceso de autenticación del sistema.
+     *
+     * Primero verifica si hay usuarios registrados. Si el archivo está vacío o no existe,
+     * ofrece al usuario la posibilidad de crear un usuario ADMIN inicial.
+     *
+     * A continuación, solicita credenciales de acceso en un bucle hasta que sean válidas
+     * o el usuario decida cancelar el proceso.
+     *
+     * @return Un par (nombreUsuario, perfil) si el acceso fue exitoso, o `null` si el usuario cancela el acceso.
+     */
+    fun autenticar(): Pair<String, Perfil>? {
+        return if(!verificarFicheroUsuarios()) null
+        else iniciarSesion()
+    }
+
+
+    /**
+     * Verifica si el archivo de usuarios existe y contiene al menos un usuario registrado.
+     *
+     * Si el fichero no existe o está vacío, se informa al usuario y se le pregunta si desea
+     * registrar un nuevo usuario con perfil ADMIN.
+     *
+     * Este método se asegura de que siempre haya al menos un usuario en el sistema.
+     *
+     * @return `true` si el proceso puede continuar (hay al menos un usuario),
+     *         `false` si el usuario cancela la creación inicial o ocurre un error.
+     */
+    private fun verificarFicheroUsuarios() : Boolean {
+        var admin : Usuario? = null
+        var condicion = false
+
+        if(!ficheros.existeFichero(rutaArchivo)){
+            if(ui.preguntar("No existe ningun usuario\nDesea crear un Admin (s/n)")){
+                val nombre = ui.pedirInfo("Introduce su nombre")
+                val contrasenia = ui.pedirInfo("Introduce su contraseña")
+                gestorUsuarios.agregarUsuario(nombre,contrasenia,Perfil.ADMIN)
+                condicion = true
+            }
+
+        }
+
+        return condicion
+    }
+
+
+    /**
+     * Solicita al usuario sus credenciales (usuario y contraseña) en un bucle hasta
+     * que sean válidas o el usuario decida cancelar.
+     *
+     * Si la autenticación es exitosa, se retorna el nombre del usuario y su perfil.
+     *
+     * @return Un par (nombreUsuario, perfil) si las credenciales son correctas,
+     *         o `null` si el usuario decide no continuar.
+     */
+    private fun iniciarSesion(): Pair<String, Perfil>? {
+        var salir = false
+        var perfil : Perfil?
+        var credenciales : Pair<String, Perfil>? = null
+
+        do {
+            val nombre = ui.pedirInfo("Introduce su nombre")
+            val contrasenia = ui.pedirInfo("Introduce su contraseña")
+
+            perfil = gestorUsuarios.iniciarSesion(nombre, contrasenia)
+
+            if (perfil != null) {
+                credenciales =  Pair(nombre, perfil)
+
+            } else {
+                ui.mostrarError("Usuario o contraseña incorrectas!!!")
+                salir = ui.preguntar("¿Deseas salir del inicio de sesión? (s/n)")
+            }
+
+        } while (!salir)
+
+        return credenciales
+    }
+}
