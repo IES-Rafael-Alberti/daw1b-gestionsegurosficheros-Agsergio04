@@ -31,17 +31,10 @@ class Ficheros(private val entradaSalida: IEntradaSalida) : IUtilFicheros {
 
 
     override fun <T : IExportable> escribirArchivo(ruta: String, elementos: List<T>): Boolean {
-        val archivo = File(ruta)
-
-         try {
-            var contenido = elementos.bufferedWriter().use { out ->
-                 elementos.forEach { out.write(it.serializar() + "\n") }
-
+        return try {
+            File(ruta).bufferedWriter().use { out ->
+                elementos.forEach { out.write(it.serializar() + "\n") }
             }
-
-             contenido = elementos.joinToString("\n")
-
-            archivo.writeText(contenido.toString())
             true
         } catch (e: IOException) {
             entradaSalida.mostrarError("Error al escribir en el archivo: ${e.message}")
