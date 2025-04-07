@@ -51,6 +51,8 @@ class GestorUsuarios(
             usuarioBuscado?.cambiarClave(seguridad.encriptarClave(nuevaClave))
         }
         return condicion
+
+        //repoUsuarios.cambiarClave(Usuario,seguridad.encriptarClave(nuevaClave))
     }
 
     override fun buscarUsuario(nombre: String): Usuario? {

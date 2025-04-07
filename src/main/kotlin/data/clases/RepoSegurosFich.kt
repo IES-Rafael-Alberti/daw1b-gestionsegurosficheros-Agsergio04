@@ -17,8 +17,8 @@ class RepoSegurosFich(
         val lineas = fich.leerArchivo(rutaArchivo) ?: return false
 
         val segurosCargados = lineas.mapNotNull { linea ->
-            val datos = linea.split(";")  // Asumiendo que los datos están separados por ";"
-            mapa[datos[0]]?.invoke(datos) // Usa la función de creación adecuada
+            val datos = linea.split(";")
+            mapa[datos[0]]?.invoke(datos)
         }
 
         seguros.clear()

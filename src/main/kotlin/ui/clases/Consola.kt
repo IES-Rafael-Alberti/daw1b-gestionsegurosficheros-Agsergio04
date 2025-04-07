@@ -127,7 +127,7 @@ class Consola: IEntradaSalida {
         var respuesta : String? = null
         do{
             respuesta = pedirInfo(mensaje + "(s/n)").lowercase()
-            if(respuesta != null){
+            if(respuesta == null){
                 mostrarError("Respuesta incorrecta")
             }
 

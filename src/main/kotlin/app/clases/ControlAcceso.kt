@@ -46,8 +46,11 @@ class ControlAcceso(
      * @return Un par (nombreUsuario, perfil) si el acceso fue exitoso, o `null` si el usuario cancela el acceso.
      */
     fun autenticar(): Pair<String, Perfil>? {
-        return if(!verificarFicheroUsuarios()) null
-        else iniciarSesion()
+        return if(verificarFicheroUsuarios()){
+            iniciarSesion()
+        } else {
+            null
+        }
     }
 
 
@@ -63,14 +66,17 @@ class ControlAcceso(
      *         `false` si el usuario cancela la creación inicial o ocurre un error.
      */
     private fun verificarFicheroUsuarios() : Boolean {
-        var admin : Usuario? = null
         var condicion = false
 
-        if(!ficheros.existeFichero(rutaArchivo)){
-            if(ui.preguntar("No existe ningun usuario\nDesea crear un Admin (s/n)")){
+        if(!ficheros.existeFichero(rutaArchivo) ||ficheros.leerArchivo(rutaArchivo).isEmpty()){
+            if(ui.preguntar("No existe ningun usuario\nDesea crear un Admin")){
                 val nombre = ui.pedirInfo("Introduce su nombre")
                 val contrasenia = ui.pedirInfo("Introduce su contraseña")
-                gestorUsuarios.agregarUsuario(nombre,contrasenia,Perfil.ADMIN)
+                if(gestorUsuarios.agregarUsuario(nombre,contrasenia,Perfil.ADMIN)){
+                    ui.mostrar("Usuario creado correctamente")
+                } else {
+                    ui.mostrar("Usuario no ha podido ser creado")
+                }
                 condicion = true
             }
 
@@ -95,6 +101,7 @@ class ControlAcceso(
         var credenciales : Pair<String, Perfil>? = null
 
         do {
+            ui.limpiarPantalla()
             val nombre = ui.pedirInfo("Introduce su nombre")
             val contrasenia = ui.pedirInfo("Introduce su contraseña")
 
@@ -105,7 +112,7 @@ class ControlAcceso(
 
             } else {
                 ui.mostrarError("Usuario o contraseña incorrectas!!!")
-                salir = ui.preguntar("¿Deseas salir del inicio de sesión? (s/n)")
+                salir = ui.preguntar("¿Deseas salir del inicio de sesión? ")
             }
 
         } while (!salir)
